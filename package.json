@@ -1,0 +1,16 @@
+{
+  "name": "web-question-assistant",
+  "version": "1.0.0",
+  "description": "Chrome extension that displays custom questions based on the websites you visit",
+  "private": true,
+  "scripts": {
+    "package": "zip -r web-question-assistant.zip . -x \"*.git*\" \"*.DS_Store\" \"node_modules/*\" \"*.zip\""
+  },
+  "keywords": [
+    "chrome-extension",
+    "questions",
+    "websites"
+  ],
+  "author": "",
+  "license": "MIT"
+} 

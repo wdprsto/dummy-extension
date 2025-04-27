@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extension Icon Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        canvas {
+            border: 1px solid #ccc;
+            margin: 10px;
+        }
+        
+        .icons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .icon-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 10px;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background-color: #88D498;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        
+        button:hover {
+            background-color: #1A936F;
+        }
+    </style>
+</head>
+<body>
+    <h1>Extension Icon Generator</h1>
+    <p>This page will generate simple icons for your Chrome extension. Click the buttons below to generate and download icon files.</p>
+    
+    <div class="icons">
+        <div class="icon-container">
+            <canvas id="icon16" width="16" height="16"></canvas>
+            <p>16x16 Icon</p>
+        </div>
+        
+        <div class="icon-container">
+            <canvas id="icon48" width="48" height="48"></canvas>
+            <p>48x48 Icon</p>
+        </div>
+        
+        <div class="icon-container">
+            <canvas id="icon128" width="128" height="128"></canvas>
+            <p>128x128 Icon</p>
+        </div>
+    </div>
+    
+    <div style="text-align: center;">
+        <button id="generateIcons">Generate Icons</button>
+        <button id="downloadIcons">Download Icons</button>
+    </div>
+    
+    <script>
+        // Colors from our theme
+        const colors = {
+            primary: "#88D498",
+            secondary: "#C6DABF",
+            background: "#F3F8F2",
+            text: "#3A4E48",
+            accent: "#1A936F"
+        };
+        
+        // Get canvas elements
+        const canvas16 = document.getElementById('icon16');
+        const canvas48 = document.getElementById('icon48');
+        const canvas128 = document.getElementById('icon128');
+        
+        // Get contexts
+        const ctx16 = canvas16.getContext('2d');
+        const ctx48 = canvas48.getContext('2d');
+        const ctx128 = canvas128.getContext('2d');
+        
+        // Generate icon function
+        function generateIcon(ctx, size) {
+            // Background
+            ctx.fillStyle = colors.background;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Border
+            ctx.strokeStyle = colors.primary;
+            ctx.lineWidth = Math.max(1, size * 0.05);
+            ctx.strokeRect(ctx.lineWidth/2, ctx.lineWidth/2, size - ctx.lineWidth, size - ctx.lineWidth);
+            
+            // Inner circle
+            ctx.fillStyle = colors.primary;
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Question mark
+            ctx.fillStyle = colors.background;
+            ctx.font = `bold ${Math.floor(size * 0.5)}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('?', size/2, size/2);
+        }
+        
+        // Generate icons on button click
+        document.getElementById('generateIcons').addEventListener('click', function() {
+            generateIcon(ctx16, 16);
+            generateIcon(ctx48, 48);
+            generateIcon(ctx128, 128);
+        });
+        
+        // Download icons
+        document.getElementById('downloadIcons').addEventListener('click', function() {
+            downloadCanvas(canvas16, 'icon16.png');
+            downloadCanvas(canvas48, 'icon48.png');
+            downloadCanvas(canvas128, 'icon128.png');
+        });
+        
+        // Helper function to download canvas as image
+        function downloadCanvas(canvas, filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // Generate icons on page load
+        window.onload = function() {
+            generateIcon(ctx16, 16);
+            generateIcon(ctx48, 48);
+            generateIcon(ctx128, 128);
+        };
+    </script>
+</body>
+</html> 

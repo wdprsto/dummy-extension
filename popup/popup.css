@@ -1,0 +1,121 @@
+/* Popup styles for Web Question Assistant */
+
+:root {
+  --primary-color: #88D498;
+  --secondary-color: #C6DABF;
+  --background-color: #F3F8F2;
+  --text-color: #3A4E48;
+  --accent-color: #1A936F;
+  --danger-color: #d16969;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  width: 320px;
+  min-height: 250px;
+}
+
+.popup-container {
+  padding: 16px;
+}
+
+h1 {
+  color: var(--accent-color);
+  font-size: 18px;
+  margin-bottom: 16px;
+  text-align: center;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.section {
+  margin-bottom: 16px;
+}
+
+.hidden {
+  display: none;
+}
+
+p {
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+span {
+  font-weight: 600;
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btn {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: none;
+  background-color: var(--secondary-color);
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.btn:hover {
+  background-color: var(--primary-color);
+}
+
+.btn.primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn.primary:hover {
+  background-color: var(--accent-color);
+}
+
+.btn.danger {
+  background-color: #ffebee;
+  color: var(--danger-color);
+}
+
+.btn.danger:hover {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--secondary-color);
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(136, 212, 152, 0.3);
+} 
