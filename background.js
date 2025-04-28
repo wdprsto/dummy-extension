@@ -8,25 +8,16 @@ chrome.runtime.onInstalled.addListener(() => {
     contexts: ["page"]
   });
   
-  // Initialize data storage
-  chrome.storage.local.get('csvData', (result) => {
-    if (!result.csvData) {
-      // If no data exists yet, save the initial data from the CSV file
-      fetch(chrome.runtime.getURL(config.dataSource.path))
-        .then(response => response.text())
-        .then(csv => {
-          chrome.storage.local.set({ csvData: csv });
-        });
-    }
-  });
+  // Initialize data storage by fetching from Google Sheet
+  fetchAndStoreData();
 });
 
 // Handle context menu clicks
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "openExtension") {
-    chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      function: showPopup
+    // Send message to content script to open popup
+    chrome.tabs.sendMessage(tab.id, {
+      action: "openPopupMenu"
     });
   }
 });
@@ -47,28 +38,42 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Send a success response
     sendResponse({ success: true });
     return true; // Keep the message channel open for the asynchronous response
+  } else if (message.action === 'fetchGoogleSheetData') {
+    fetchAndStoreData()
+      .then(() => sendResponse({ success: true }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true; // Keep the message channel open for the asynchronous response
   }
 });
 
-// Function to show the popup
-function showPopup() {
-  // Create or show the floating popup
-  const existingPopup = document.getElementById('web-question-assistant-popup');
-  
-  if (!existingPopup) {
-    const iframe = document.createElement('iframe');
-    iframe.id = 'web-question-assistant-popup';
-    iframe.src = chrome.runtime.getURL('popup/popup.html');
-    iframe.style.position = 'fixed';
-    iframe.style.bottom = '20px';
-    iframe.style.right = '20px';
-    iframe.style.width = '300px';
-    iframe.style.height = '200px';
-    iframe.style.border = 'none';
-    iframe.style.zIndex = '9999';
-    document.body.appendChild(iframe);
-  } else {
-    existingPopup.style.display = 'block';
+// Function to fetch and store data from Google Sheet
+async function fetchAndStoreData() {
+  try {
+    const response = await fetch(config.dataSource.googleSheet.url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+    }
+    
+    const csvData = await response.text();
+    
+    // Store in local storage
+    chrome.storage.local.set({ csvData, lastFetched: Date.now() });
+    
+    return csvData;
+  } catch (error) {
+    console.error('Error fetching Google Sheet data:', error);
+    
+    // Fallback to local CSV if available
+    try {
+      const localResponse = await fetch(chrome.runtime.getURL(config.dataSource.path));
+      const localCsvData = await localResponse.text();
+      chrome.storage.local.set({ csvData: localCsvData, lastFetched: Date.now() });
+      return localCsvData;
+    } catch (localError) {
+      console.error('Error fetching local CSV fallback:', localError);
+      throw error; // Re-throw the original error
+    }
   }
 }
 
@@ -78,17 +83,27 @@ function checkWebsite(url, tabId) {
   const domain = new URL(url).hostname.replace('www.', '');
   
   // First check in storage
-  chrome.storage.local.get('csvData', (result) => {
-    if (result.csvData) {
+  chrome.storage.local.get(['csvData', 'lastFetched'], (result) => {
+    const now = Date.now();
+    const oneHourAgo = now - (60 * 60 * 1000); // 1 hour in milliseconds
+    
+    // If data is older than 1 hour, refresh it
+    if (!result.lastFetched || result.lastFetched < oneHourAgo) {
+      fetchAndStoreData()
+        .then(csvData => processData(csvData, domain, tabId))
+        .catch(() => {
+          // If fetch fails, use existing data
+          if (result.csvData) {
+            processData(result.csvData, domain, tabId);
+          }
+        });
+    } else if (result.csvData) {
       processData(result.csvData, domain, tabId);
     } else {
-      // Fallback to CSV file
-      fetch(chrome.runtime.getURL(config.dataSource.path))
-        .then(response => response.text())
-        .then(csv => {
-          processData(csv, domain, tabId);
-        })
-        .catch(err => console.error('Error reading CSV file:', err));
+      // No data in storage, fetch it
+      fetchAndStoreData()
+        .then(csvData => processData(csvData, domain, tabId))
+        .catch(err => console.error('Error fetching data:', err));
     }
   });
 }
@@ -105,7 +120,7 @@ function processData(csv, domain, tabId) {
         const website = parts[config.dataSource.columns.website].trim();
         if (domain === website) {
           const question = parts[config.dataSource.columns.question].trim();
-          // Show the popup automatically for listed websites
+          // Show the notification badge for listed websites
           chrome.tabs.sendMessage(tabId, {
             action: "showPopup",
             question: question

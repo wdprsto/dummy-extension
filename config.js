@@ -14,7 +14,15 @@ const config = {
   
   // Data source configuration
   dataSource: {
+    // Local data file (fallback)
     path: "data/data.csv",
+    // Google Sheet data source
+    googleSheet: {
+      // Spreadsheet ID from the URL
+      id: "1uIizPuQ7ILmI8k3P7OGfWOe_MkMTVZWQX165bq3_aJM",
+      // URL to fetch the CSV data (using export=csv parameter)
+      url: "https://docs.google.com/spreadsheets/d/1uIizPuQ7ILmI8k3P7OGfWOe_MkMTVZWQX165bq3_aJM/export?format=csv&gid=0"
+    },
     columns: {
       website: 0,
       question: 1

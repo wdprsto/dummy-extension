@@ -27,15 +27,39 @@ document.addEventListener('DOMContentLoaded', () => {
   // Apply theme colors from config
   applyTheme();
   
-  // Load data and initialize
-  loadData();
-  
-  // Get current tab info
-  getCurrentTab();
-  
-  // Setup event listeners
-  setupEventListeners();
+  // Refresh data from Google Sheet first, then load data
+  refreshGoogleSheetData()
+    .then(() => {
+      // Load data and initialize
+      loadData();
+      
+      // Get current tab info
+      getCurrentTab();
+      
+      // Setup event listeners
+      setupEventListeners();
+    })
+    .catch(error => {
+      console.error('Error refreshing data:', error);
+      // Try to load existing data anyway
+      loadData();
+      getCurrentTab();
+      setupEventListeners();
+    });
 });
+
+// Refresh data from Google Sheet
+async function refreshGoogleSheetData() {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({ action: 'fetchGoogleSheetData' }, (response) => {
+      if (response && response.success) {
+        resolve();
+      } else {
+        reject(response ? response.error : 'Unknown error');
+      }
+    });
+  });
+}
 
 // Apply theme colors from config
 function applyTheme() {
@@ -47,34 +71,51 @@ function applyTheme() {
   root.style.setProperty('--accent-color', config.theme.accentColor);
 }
 
-// Load website data from CSV
+// Load website data from storage
 function loadData() {
-  fetch(chrome.runtime.getURL(config.dataSource.path))
-    .then(response => response.text())
-    .then(csv => {
-      const lines = csv.split('\n');
-      websites = [];
-      
-      // Skip header line
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (line) {
-          const parts = line.split(',');
-          if (parts.length >= 2) {
-            websites.push({
-              website: parts[config.dataSource.columns.website],
-              question: parts[config.dataSource.columns.question]
-            });
-          }
-        }
-      }
+  chrome.storage.local.get('csvData', (result) => {
+    if (result.csvData) {
+      parseCSVData(result.csvData);
       
       // Update UI if current website is already known
       if (currentWebsite) {
         updateUIForWebsite(currentWebsite);
       }
-    })
-    .catch(err => console.error('Error loading data:', err));
+    } else {
+      // Fallback to local CSV file
+      fetch(chrome.runtime.getURL(config.dataSource.path))
+        .then(response => response.text())
+        .then(csvData => {
+          parseCSVData(csvData);
+          
+          // Update UI if current website is already known
+          if (currentWebsite) {
+            updateUIForWebsite(currentWebsite);
+          }
+        })
+        .catch(err => console.error('Error loading data:', err));
+    }
+  });
+}
+
+// Parse CSV data into websites array
+function parseCSVData(csvData) {
+  const lines = csvData.split('\n');
+  websites = [];
+  
+  // Skip header line
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line) {
+      const parts = line.split(',');
+      if (parts.length >= 2) {
+        websites.push({
+          website: parts[config.dataSource.columns.website],
+          question: parts[config.dataSource.columns.question]
+        });
+      }
+    }
+  }
 }
 
 // Get current tab URL
@@ -193,7 +234,7 @@ function deleteWebsite(website) {
   }
 }
 
-// Save data back to CSV
+// Save data back to CSV and storage
 function saveData() {
   let csv = 'website,question\n';
   
@@ -202,8 +243,21 @@ function saveData() {
   });
   
   // Use chrome.storage to save the CSV content
-  chrome.storage.local.set({ csvData: csv }, () => {
+  chrome.storage.local.set({ csvData: csv, lastFetched: Date.now() }, () => {
     // After saving, notify a background script to write to file
     chrome.runtime.sendMessage({ action: 'saveData', data: csv });
+    
+    // Show feedback to the user that changes are saved but not synced to Google Sheet
+    const feedbackEl = document.createElement('div');
+    feedbackEl.className = 'feedback-message';
+    feedbackEl.textContent = 'Changes saved locally. To sync with Google Sheet, please manually update the sheet.';
+    
+    // Add to page
+    document.body.appendChild(feedbackEl);
+    
+    // Remove after 5 seconds
+    setTimeout(() => {
+      feedbackEl.remove();
+    }, 5000);
   });
 } 

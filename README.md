@@ -5,9 +5,12 @@ A Chrome extension that displays custom questions based on the websites you visi
 ## Features
 
 - Automatically detects if the current website is in your predefined list
-- Shows a floating question popup for websites in your list
+- Shows a notification badge for websites in your list that expands to a question popup
+- Minimize or dismiss the popup as needed
 - Right-click context menu to access the extension on any website
-- Add, edit, and delete website-question pairs
+- Complete CRUD functionality (Create, Read, Update, Delete) for question management
+- Edit questions directly from the question popup
+- Google Sheet integration for data storage
 - Customizable appearance through the config file
 
 ## Tech Stack
@@ -15,11 +18,38 @@ A Chrome extension that displays custom questions based on the websites you visi
 - Vanilla JavaScript
 - Chrome Extension API
 - CSS3 for styling
-- CSV for data storage
+- Google Sheets for data storage
+
+## How to Use
+
+### On Websites with Questions
+
+1. When you visit a website that has a question in your database, a small notification badge will appear in the bottom right corner
+2. Click the badge to expand and see the question
+3. Use the minimize button (-) to collapse back to the badge
+4. Use the close button (×) to dismiss completely
+5. Click "Edit Question" to modify or delete the question
+
+### On Websites without Questions
+
+1. Right-click anywhere on the page and select "Open Web Question Assistant"
+2. A form will appear allowing you to add a question for the current website
+3. Fill in the question and click "Save"
+
+### Editing Questions
+
+You can edit questions in two ways:
+1. Through the popup interface by clicking "Edit Question"
+2. By right-clicking and selecting "Open Web Question Assistant" on a website that already has a question
 
 ## Modifying Data
 
-The extension gets its data from the `data/data.csv` file. This file has a simple structure:
+### Google Sheet Integration
+
+The extension gets its data from a Google Sheet at:
+[https://docs.google.com/spreadsheets/d/1uIizPuQ7ILmI8k3P7OGfWOe_MkMTVZWQX165bq3_aJM/edit](https://docs.google.com/spreadsheets/d/1uIizPuQ7ILmI8k3P7OGfWOe_MkMTVZWQX165bq3_aJM/edit)
+
+This Google Sheet has a simple structure:
 
 ```
 website,question
@@ -28,14 +58,15 @@ youtube.com,How are you doing?
 facebook.com,Are you okay?
 ```
 
-You can modify this file directly to add or change website-question pairs. The format is:
+To modify the data:
+1. Edit the Google Sheet directly (recommended for data synchronization)
+2. Use the extension's UI to add, edit, or delete entries (changes are saved locally)
 
-- First column: Website domain (without "www." or "https://")
-- Second column: The question you want to display
+When you make changes through the extension UI, they are saved locally. To synchronize these changes with the Google Sheet, you must manually update the sheet.
 
-Alternatively, you can use the extension's UI to manage the data:
-1. Right-click on any webpage and select "Open Web Question Assistant"
-2. Use the interface to add, edit, or delete entries
+### Local Data
+
+The extension also includes a local copy of the data in `data/data.csv` as a fallback.
 
 ## Configuration
 
@@ -43,7 +74,31 @@ You can customize the extension by editing the `config.js` file:
 
 - Change the extension name
 - Modify the color theme
-- Update the data source path
+- Update the data source path or Google Sheet URL
+
+```javascript
+// In config.js
+const config = {
+  // App information
+  appName: "Web Question Assistant",
+  
+  // Theme configuration
+  theme: {
+    primaryColor: "#88D498", // Pastel green
+    ...
+  },
+  
+  // Data source configuration
+  dataSource: {
+    path: "data/data.csv",
+    googleSheet: {
+      id: "1uIizPuQ7ILmI8k3P7OGfWOe_MkMTVZWQX165bq3_aJM",
+      url: "https://docs.google.com/spreadsheets/d/1uIizPuQ7ILmI8k3P7OGfWOe_MkMTVZWQX165bq3_aJM/export?format=csv&gid=0"
+    },
+    ...
+  }
+};
+```
 
 ## Installation Instructions
 
